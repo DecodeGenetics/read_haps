@@ -1,4 +1,6 @@
 # read_haps
+Program to estimate human contamination in Illumina WGS files
+
 ## Compilation:
 
 Choose directory for installation
@@ -16,9 +18,7 @@ make
 C++ compiler with C++11 support
 
 
-read_haps - program to estimate human contamination in Illumina WGS files
-
-usage:
+# Usage:
  read_haps [OPTIONS] "BAMFILE" "RELIABLE_SNP_FILE" "VCF_FILE"
 
 SYNOPSIS
