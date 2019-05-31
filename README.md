@@ -1,16 +1,18 @@
-Compilation:
+# read_haps
+## Compilation:
 
 Choose directory for installation
 Download or clone:
-https://github.com/DecodeGenetics/SeqAnHTS
-ln -s SeqAnHTS seqan
 
 Download or clone this repository
+```sh
 tar xf boost.tgz
 tar xf htslib.tgz
+tar xf seqan.tgz
 make
+```
 
-Dependencies:
+## Dependencies:
 C++ compiler with C++11 support
 
 
@@ -69,17 +71,26 @@ DETAILS
   non-parity are considered evidence for three haplotypes at the marker pair.  Samples with multiple such pairs are considered contaminated.
 
 
-Example output:
+# Example output:
+
 SNP_PAIRS ERROR_PAIRS DOUBLE_ERROR_PAIR_COUNT DOUBLE_ERROR_FRACTION REL_ERROR_FRACTION NONSENSE_FRACTION PASS_FAIL REASON
+
 905879 955 18 1.98702e-05 0.000490452 0.00196273 PASS -
 
 SNP_PAIRS - Number of marker pairs that are connnected by at least one haplotype
+
 ERROR_PAIRS - Number of markers pairs where there is evidence of both parity and non-parity haplotypes
+
 DOUBLE_ERROR_PAIR_COUNT - Number of marker pairs where there are two read pairs evidencing both parity and non-parity
+
 DOUBLE_ERROR_FRACTION - Fraction of marker pairs with two read pairs evidencing parity and non-parity
+
 REL_ERROR_FRACTION - Average fraction of reads from the smaller group (parity, non-parity)
+
 NONSENSE_FRACTION - Fraction of read pairs reporting neither of the two alleles at the markers considered.
+
 PASS_FAIL - PASS or FAIL
+
 REASON - "-" for PASS, FAIL can be READ_PAIR_COUNT, which will occur if a low coverage sample is used or CONTAMINATION
 
 to further investigate the contamination the -pu option can be used, reporting the location of all read pairs showing evidence of three haplotypes.
