@@ -303,7 +303,6 @@ int parseReadHapArguments( int argc, char const ** argv ){
   addOption(parser, ArgParseOption("fa", "fa", "Fasta file ", ArgParseArgument::STRING, "FA"));
   addOption(parser, ArgParseOption("v", "verbose", "verbose"));
   addOption(parser, ArgParseOption("p", "pairs", "Output SNP pairs"));
-  addOption(parser, ArgParseOption("i", "indels", "Use indels"));
   setDefaultValue( parser, "qual", O.qual );
   setDefaultValue( parser, "phred", O.minPL );
   setDefaultValue( parser, "mq", O.mq );

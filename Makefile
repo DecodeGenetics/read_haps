@@ -1,6 +1,7 @@
-BOOST=boost
-HTSLIB=htslib
-SEQAN=seqan
+DIR=$(shell pwd)
+BOOST=$(DIR)/boost
+HTSLIB=$(DIR)/htslib
+SEQAN=$(DIR)/seqan
 
 CXXFLAGS+=-I.
 CXXFLAGS+=-isystem $(SEQAN)/include
