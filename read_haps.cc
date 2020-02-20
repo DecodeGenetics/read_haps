@@ -83,19 +83,23 @@ public:
     }
   }
   void report(){
-    cout << "SNP_PAIRS ERROR_PAIRS DOUBLE_ERROR_PAIR_COUNT DOUBLE_ERROR_FRACTION REL_ERROR_FRACTION NONSENSE_FRACTION PASS_FAIL REASON" << endl;;
-    float doubleErrorFrac = (1.0*nDoubleErrorPairs)/(1.0*nPairs);
-    float errorFraction = errorFractionCount/(1.0*nPairs);
-    float nonsenseFraction = (1.0*nBSPairs)/(1.0*nPairs);
-    cout << nPairs << " " << nSingleErrorPairs << " " << nDoubleErrorPairs << " " << doubleErrorFrac << " " << errorFraction << " " << nonsenseFraction << " ";
-    if( doubleErrorFrac < O.maxDoubleError ){
-      if( nPairs > O.nPairsMin ){
-	cout << "PASS -" << endl;
-      }else{
-	cout << "FAIL READ_PAIR_COUNT" << endl;
-      }
+    cout << "SNP_PAIRS ERROR_PAIRS DOUBLE_ERROR_PAIR_COUNT DOUBLE_ERROR_FRACTION REL_ERROR_FRACTION NONSENSE_FRACTION PASS_FAIL REASON" << endl;
+    if( nPairs == 0 ){
+      cout << 0 << " " << 0 << " " << 0 << " " << 0 << " " << 0 << " " << 0 << " FAIL READ_PAIR_COUNT" << endl;
     }else{
-      cout << "FAIL CONTAMINATION" << endl;
+      float doubleErrorFrac = (1.0*nDoubleErrorPairs)/(1.0*nPairs);
+      float errorFraction = errorFractionCount/(1.0*nPairs);
+      float nonsenseFraction = (1.0*nBSPairs)/(1.0*nPairs);
+      cout << nPairs << " " << nSingleErrorPairs << " " << nDoubleErrorPairs << " " << doubleErrorFrac << " " << errorFraction << " " << nonsenseFraction << " ";
+      if( doubleErrorFrac < O.maxDoubleError ){
+	if( nPairs > O.nPairsMin ){
+	  cout << "PASS -" << endl;
+	}else{
+	  cout << "FAIL READ_PAIR_COUNT" << endl;
+	}
+      }else{
+	cout << "FAIL CONTAMINATION" << endl;
+      }
     }
   }
   haploSummary(): nPairs(0), nSingleErrorPairs(0), nDoubleErrorPairs(0), nBSPairs(0), errorFractionCount(0.0){};
@@ -418,7 +422,9 @@ int main( int argc, char const ** argv )
       }
       if( record.rID != lrID )
 	breakWhile = true;
-      if( length( record.ref ) == 1 and length( record.alt ) == 1 ){
+      StringSet< CharString> altSet;
+      strSplit(altSet,record.alt,EqualsChar<','>());
+      if( length( record.ref ) == 1 and length( altSet[0] ) == 1 ){
 	bool heterozygote = false;
 	// This is not robust, the GT field needs to be first, should ask seqan for the gt field
 	unsigned int gtID = 0, plID;
@@ -447,7 +453,7 @@ int main( int argc, char const ** argv )
 	  if( mI[cChrom][mUsed[cChrom]].name  == "." )  // Use marker name if given, else use chr:pos
 	    mI[cChrom][mUsed[cChrom]].name  = string( toCString( cChrom ))+string(":")+to_string( (long long unsigned int) (record.beginPos + 1) );
 	  mI[cChrom][mUsed[cChrom]].a1 = string( toCString( record.ref ));
-	  mI[cChrom][mUsed[cChrom]].a2 = string( toCString( record.alt ));
+	  mI[cChrom][mUsed[cChrom]].a2 = string( toCString( altSet[0] ));
 	  if( posHash[cChrom].count( mI[cChrom][mUsed[cChrom]].pos/100 ) == 0 ) posHash[cChrom][mI[cChrom][mUsed[cChrom]].pos/100] = mUsed[cChrom];
 	  if( O.verbose ) cout << mI[cChrom][mUsed[cChrom]].pos << " " << mI[cChrom][mUsed[cChrom]].name << " " << mI[cChrom][mUsed[cChrom]].a1 << " " << mI[cChrom][mUsed[cChrom]].a2 << endl;
 	  mUsed[cChrom]++;
