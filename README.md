@@ -1,24 +1,25 @@
 # read_haps
 Program to estimate human contamination in Illumina WGS files
 
-## Compilation:
+## Installation
+### Get binary
+Fetch a static binary (Linux 64bit) using
 
-Choose directory for installation
-Download or clone:
-
-Download or clone this repository
 ```sh
-tar xf boost.tgz
-tar xf htslib.tgz
-tar xf seqan.tgz
-make
+wget https://github.com/DecodeGenetics/read_haps/releases/download/v0.1.1/read_haps
+chmod a+x read_haps
 ```
 
-## Dependencies:
-C++ compiler with C++11 support
+### Compilation
+You can also compile from source if you have the following:
+ * C++ compiler with C++11 support
+ * Boost >=1.52
+ * zlib
+ * bz2
 
+Download or clone this repository and type `make` to build.
 
-# Usage:
+## Usage
  read_haps [OPTIONS] "BAMFILE" "RELIABLE_SNP_FILE" "VCF_FILE"
 
 SYNOPSIS
@@ -71,7 +72,7 @@ DETAILS
   non-parity are considered evidence for three haplotypes at the marker pair.  Samples with multiple such pairs are considered contaminated.
 
 
-# Example output:
+# Example output
 
 SNP_PAIRS ERROR_PAIRS DOUBLE_ERROR_PAIR_COUNT DOUBLE_ERROR_FRACTION REL_ERROR_FRACTION NONSENSE_FRACTION PASS_FAIL REASON
 
