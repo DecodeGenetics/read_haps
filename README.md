@@ -19,6 +19,13 @@ You can also compile from source if you have the following:
 
 Download or clone this repository and type `make` to build.
 
+### Testing
+You can test your `read_haps` compilation using
+
+```sh
+make test
+```
+
 ## Usage
  read_haps [OPTIONS] "BAMFILE" "RELIABLE_SNP_FILE" "VCF_FILE"
 
