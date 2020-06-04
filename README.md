@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/DecodeGenetics/read_haps.svg?branch=master)](https://travis-ci.org/DecodeGenetics/read_haps)
+
 # read_haps
 Program to estimate human contamination in Illumina WGS files
 
@@ -6,7 +8,7 @@ Program to estimate human contamination in Illumina WGS files
 Fetch a static binary (Linux 64bit) using
 
 ```sh
-wget https://github.com/DecodeGenetics/read_haps/releases/download/v0.1.1/read_haps
+wget https://github.com/DecodeGenetics/read_haps/releases/download/v0.2/read_haps
 chmod a+x read_haps
 ```
 
