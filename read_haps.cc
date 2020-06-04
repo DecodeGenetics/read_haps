@@ -43,7 +43,7 @@ public:
   int minPL;
   bool seqanAlign;
   int maxSNPsInReadPair; //For vector allocation, the number of SNPs in the interval from begin first to end second, might be increased for mate pair/long read data
-  readhaps_options(): faFile("genome.fa"), maxCigarLen(1), verbose(false), outputSNPpairs(false), qual( 30), mq(30), readPairWindow( 1000 ),  maxDoubleError(0.002), nPairsMin(10000), minPL(40),maxSNPsInReadPair(500), seqanAlign(false){};
+  readhaps_options(): faFile("genome.fa"), maxCigarLen(1), verbose(false), outputSNPpairs(false), qual( 30), mq(30), readPairWindow( 1000 ),  maxDoubleError(0.002), nPairsMin(1000), minPL(40),maxSNPsInReadPair(500), seqanAlign(false){};
 };
 
 readhaps_options O;
@@ -109,7 +109,7 @@ public:
 
 
 void outputSNPpairs( vector< markerInfo>& mI, int orig, map< int, markerPair> sps ){
-    if( O.verbose ) cout << "outputSNPpairs " << orig << " " << mI[orig].name << endl;
+    if( O.verbose ) cerr << "outputSNPpairs " << orig << " " << mI[orig].name << endl;
     for( auto it = sps.begin(); it != sps.end(); it++ ){
         cout << mI[orig].name << " " << mI[(*it).first].name  << " " << (*it).second.parity << " " << (*it).second.nonparity << " " << (*it).second.errorpair << endl;
     }
@@ -147,7 +147,7 @@ int addReadToVectors( vector< markerInfo>& mI, map< int, int>& posHash, BamAlign
     }else{
       barPos = mI[snpBeg].pos - bar.beginPos;
     }
-    if( O.verbose ) cout << "barPos " << barPos << endl;
+    if( O.verbose ) cerr << "barPos " << barPos << endl;
     if( bar.qual[barPos] - 33 >= O.qual ){
       if( vectorI < (int) snpIDs.size() ){
 	snpIDs[vectorI] = snpBeg;
@@ -176,7 +176,7 @@ void addReadPairToSNPpairs( vector< markerInfo>& mI, map< int, int>& posHash, ma
     addReadToVectors( mI, posHash, bar1, nSNPsInReadPair, snpIDs, refCarrier, altCarrier );
     addReadToVectors( mI, posHash, bar2, nSNPsInReadPair, snpIDs, refCarrier, altCarrier );
   }
-  if( O.verbose ) cout << "Adding read " << nSNPsInReadPair << endl;
+  if( O.verbose ) cerr << "Adding read " << nSNPsInReadPair << endl;
   for( int i = 0; (i < nSNPsInReadPair) and (i < O.maxSNPsInReadPair); i++ ){
     for( int j = i+1; (j < nSNPsInReadPair) and (j < O.maxSNPsInReadPair); j++ ){
       int first = snpIDs[i]; int second = snpIDs[j];
@@ -210,7 +210,7 @@ int processBamRegion( vector< markerInfo>& mI,  map< int, int>& posHash, CharStr
     //    BamHeader header;
     //readHeader(header, bamS );
 
-  if( O.verbose ) cout << "reading Bam region " << cChrom << " " << 1 << " " << length(O.chrSeq ) << endl;
+  if( O.verbose ) cerr << "reading Bam region " << cChrom << " " << 1 << " " << length(O.chrSeq ) << endl;
     
     /*   unsigned int rID = 0;
     if (!getIdByName( rID, contigNamesCache( context( bamS)   ), cChrom )){
@@ -247,7 +247,7 @@ int processBamRegion( vector< markerInfo>& mI,  map< int, int>& posHash, CharStr
 	if( not hasFlagSecondary( record ) ){
 	  bars[record.qName] = record;
 	  barList.emplace_front( record.qName );
-	  if( O.verbose ) cout << "added " << record.qName << endl;
+	  if( O.verbose ) cerr << "added " << record.qName << endl;
 	}
       }else{
 	if( record.beginPos < bars[record.qName].beginPos )
@@ -257,11 +257,11 @@ int processBamRegion( vector< markerInfo>& mI,  map< int, int>& posHash, CharStr
 	  addReadPairToSNPpairs( mI, posHash, snpPairs, snpList, bars[record.qName], record );  // Changed order here, old order does not make sense
 	barList.remove(record.qName);
 	bars.erase( record.qName);
-	if( O.verbose ) cout << "removed " << record.qName << endl;
+	if( O.verbose ) cerr << "removed " << record.qName << endl;
       }
       while( (not barList.empty()) and ((bars[barList.back()].beginPos < record.beginPos - O.readPairWindow) or (bars.size() > MAX_READS_STORED)) ){
-	if( O.verbose ) cout << barList.empty() << " barList empty" << endl;
-	if( O.verbose ) cout << barList.back() << endl;
+	if( O.verbose ) cerr << barList.empty() << " barList empty" << endl;
+	if( O.verbose ) cerr << barList.back() << endl;
 	bars.erase(barList.back());
 	barList.pop_back();
       }
@@ -394,7 +394,7 @@ int main( int argc, char const ** argv )
 
   FaiIndex faiIndex;
   if( ! open( faiIndex,  toCString( O.faFile ) )  )
-    std::cerr << "ERROR: Could not load FAI index path/to/index.fai\n";
+    std::cerr << "ERROR: Could not load FAI index path/to/index.fai " << O.faFile << std::endl;
   unsigned idx = 0;
 
   seqan::Tabix vcfIndex;
@@ -408,6 +408,7 @@ int main( int argc, char const ** argv )
   map< CharString, int> mUsed;
   for( auto i = posUsed.begin(); i != posUsed.end(); i++ ){
     CharString cChrom = (*i).first;
+    if( O.verbose ) cerr << "reading VCF file file " << cChrom << endl;
     mI[cChrom].resize( 100 );
     mUsed[cChrom] = 0;
     unsigned lrID = 0;
@@ -426,7 +427,6 @@ int main( int argc, char const ** argv )
       strSplit(altSet,record.alt,EqualsChar<','>());
       if( length( record.ref ) == 1 and length( altSet[0] ) == 1 ){
 	bool heterozygote = false;
-	// This is not robust, the GT field needs to be first, should ask seqan for the gt field
 	unsigned int gtID = 0, plID;
 	StringSet< CharString> formatIs;
 	strSplit(formatIs,record.format,EqualsChar<':'>());
@@ -434,13 +434,16 @@ int main( int argc, char const ** argv )
 	StringSet< CharString> gtIs;
 	strSplit(gtIs,gt2,EqualsChar<':'>());
 	getIdByName( gtID, formatIs, "GT" );
-	getIdByName( plID, formatIs, "PL" );
 	CharString cGT = getValueById( record.genotypeInfos, gtID );
 	if( gtIs[gtID][0] == '0' and gtIs[gtID][2] == '1' )
 	  heterozygote = true;
 	StringSet< CharString> PLset;
 	strSplit(PLset,gtIs[plID],EqualsChar<','>());
 	bool highPL = false;
+	if( !getIdByName( plID, formatIs, "PL" )){
+	  if( O.verbose ) cerr << "No PL found, setting as true " << cChrom << " " << record.beginPos+1 << endl;
+	  highPL = true;
+	}
 	try{  // The PL might be set as "-"
 	  if( atoi( toCString( PLset[0] ) ) >= O.minPL and atoi( toCString( PLset[2] ) ) >= O.minPL ){
 	    highPL = true;
@@ -455,7 +458,7 @@ int main( int argc, char const ** argv )
 	  mI[cChrom][mUsed[cChrom]].a1 = string( toCString( record.ref ));
 	  mI[cChrom][mUsed[cChrom]].a2 = string( toCString( altSet[0] ));
 	  if( posHash[cChrom].count( mI[cChrom][mUsed[cChrom]].pos/100 ) == 0 ) posHash[cChrom][mI[cChrom][mUsed[cChrom]].pos/100] = mUsed[cChrom];
-	  if( O.verbose ) cout << mI[cChrom][mUsed[cChrom]].pos << " " << mI[cChrom][mUsed[cChrom]].name << " " << mI[cChrom][mUsed[cChrom]].a1 << " " << mI[cChrom][mUsed[cChrom]].a2 << endl;
+	  if( O.verbose ) cerr << mI[cChrom][mUsed[cChrom]].pos << " " << mI[cChrom][mUsed[cChrom]].name << " " << mI[cChrom][mUsed[cChrom]].a1 << " " << mI[cChrom][mUsed[cChrom]].a2 << endl;
 	  mUsed[cChrom]++;
 	  if( mUsed[cChrom] >= (int) mI[cChrom].size() ) mI[cChrom].resize( 2*mI[cChrom].size() );
 	}
@@ -467,7 +470,7 @@ int main( int argc, char const ** argv )
   }
   for( auto i = mI.begin(); i != mI.end(); i++ ){
     mI[(*i).first].resize( mUsed[(*i).first] );
-    if( O.verbose ) cout << (*i).first << " " << mI[(*i).first].size() << endl;
+    if( O.verbose ) cerr << (*i).first << " " << mI[(*i).first].size() << endl;
   }
 
   //  BamIndex<Bai> baiI;
@@ -485,6 +488,7 @@ int main( int argc, char const ** argv )
 
   haploSummary hs;
   for( auto i = mI.begin(); i != mI.end(); i++ ){
+    if( O.verbose ) cerr << "bam file scan " << (*i).first << endl;
     CharString tChrom = (*i).first;
     if (!getIdByName(idx, faiIndex, tChrom ))
       std::cerr << "ERROR: FAI index has no entry for " << (*i).first << std::endl;
