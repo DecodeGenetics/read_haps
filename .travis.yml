@@ -1,0 +1,12 @@
+language: cpp
+dist: xenial
+compiler: gcc
+
+before_install:
+  - sudo apt-get install -y libboost-all-dev 
+
+install:
+  - make
+
+script:
+  - make test
