@@ -26,6 +26,8 @@ You can test your `read_haps` compilation using
 make test
 ```
 
+The test runs on a 10 MB region test using a subsampled (~6x coverage) HG002 BAM file and compares output to expected results. You can also find genome-wide tests in the [test/ directory](https://github.com/DecodeGenetics/read_haps/tree/add_test/test).
+
 ## Usage
  read_haps [OPTIONS] "BAMFILE" "RELIABLE_SNP_FILE" "VCF_FILE"
 
