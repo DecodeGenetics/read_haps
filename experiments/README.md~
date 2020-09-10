@@ -1,0 +1,3 @@
+## Contamination
+
+Commands in batch and batch_raw. Symlinks called `genome.fa` and `genome.fa.fai` should be created and point to a GRCh38 reference.

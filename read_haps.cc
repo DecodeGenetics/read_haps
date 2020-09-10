@@ -43,7 +43,7 @@ public:
   int minPL;
   bool seqanAlign;
   int maxSNPsInReadPair; //For vector allocation, the number of SNPs in the interval from begin first to end second, might be increased for mate pair/long read data
-  readhaps_options(): faFile("genome.fa"), maxCigarLen(1), verbose(false), outputSNPpairs(false), qual( 30), mq(30), readPairWindow( 1000 ),  maxDoubleError(0.002), nPairsMin(1000), minPL(40),maxSNPsInReadPair(500), seqanAlign(false){};
+  readhaps_options(): faFile("genome.fa"), maxCigarLen(1), verbose(false), outputSNPpairs(false), qual( 30), mq(30), readPairWindow( 1000 ),  maxDoubleError(0.002), nPairsMin(1000), minPL(40), seqanAlign(false), maxSNPsInReadPair(500){};
 };
 
 readhaps_options O;
@@ -206,19 +206,9 @@ void addReadPairToSNPpairs( vector< markerInfo>& mI, map< int, int>& posHash, ma
 
 int processBamRegion( vector< markerInfo>& mI,  map< int, int>& posHash, CharString& cChrom, HtsFile& bamS, haploSummary& hs ){
     
-    
-    //    BamHeader header;
-    //readHeader(header, bamS );
 
   if( O.verbose ) cerr << "reading Bam region " << cChrom << " " << 1 << " " << length(O.chrSeq ) << endl;
     
-    /*   unsigned int rID = 0;
-    if (!getIdByName( rID, contigNamesCache( context( bamS)   ), cChrom )){
-      cerr << "ERROR: Reference sequence named " << cChrom << " not known.\n";
-      return 1;
-    }
-    
-    if( O.verbose ) cerr << "GotID " << cChrom << " " << rID <<  " " << length(O.chrSeq ) << endl; */
     // Jump the BGZF stream to this position.
     if (!setRegion(bamS, toCString(cChrom), 1, length(O.chrSeq)))
     {
@@ -233,16 +223,8 @@ int processBamRegion( vector< markerInfo>& mI,  map< int, int>& posHash, CharStr
 
     BamAlignmentRecord record;
 
-    unsigned lrID = 0;
-    bool rIDunknown = true;
-    bool breakWhile = false;
-
-    while (readRegion(record, bamS) and (not breakWhile))
+    while (readRegion(record, bamS) )
     {
-      if( rIDunknown ){  // Silly hack 
-	rIDunknown = false;
-	lrID = record.rID;
-      }
       if( bars.count( record.qName ) == 0 ){
 	if( not hasFlagSecondary( record ) ){
 	  bars[record.qName] = record;
@@ -251,7 +233,7 @@ int processBamRegion( vector< markerInfo>& mI,  map< int, int>& posHash, CharStr
 	}
       }else{
 	if( record.beginPos < bars[record.qName].beginPos )
-	  cout << "WTF " << record.qName << " " << record.beginPos << " " << bars[record.qName].beginPos << endl;
+	  cerr << "WTF " << record.qName << " " << record.beginPos << " " << bars[record.qName].beginPos << endl;
 	if( (record.beginPos <= (bars[record.qName].beginPos + O.readPairWindow)) and 
 	    (hasFlagRC(record) xor hasFlagRC(bars[record.qName])) )
 	  addReadPairToSNPpairs( mI, posHash, snpPairs, snpList, bars[record.qName], record );  // Changed order here, old order does not make sense
@@ -375,16 +357,22 @@ int main( int argc, char const ** argv )
   ifstream f;
   int markerP;
   string sChrom;
-  f.open( toCString( O.positionsUsedFile ) );  // Need to catch error
+  f.open( toCString( O.positionsUsedFile ) );
   f >> sChrom;
   f >> markerP;
-  
+  bool emptyF = true;
   while( f ){
+    emptyF = false;
     CharString chrom(sChrom.c_str());
     posUsed[chrom][markerP] = 1;
     f >> sChrom;
     f >> markerP;
   }
+  if( emptyF ){
+    cout << "Empty or malformated RELIABLE_SNP_FILE " << O.positionsUsedFile << endl;
+    return 1;
+  }
+
  
   if( O.verbose ) cerr << "read pos used file " << endl;
   // Open the input VCF file and prepare output vcf stream.
@@ -408,10 +396,11 @@ int main( int argc, char const ** argv )
   map< CharString, int> mUsed;
   for( auto i = posUsed.begin(); i != posUsed.end(); i++ ){
     CharString cChrom = (*i).first;
-    if( O.verbose ) cerr << "reading VCF file file " << cChrom << endl;
+    if( O.verbose ) cerr << "reading VCF file  " << cChrom << endl;
+    mI[cChrom] = vector< markerInfo>();
     mI[cChrom].resize( 100 );
     mUsed[cChrom] = 0;
-    unsigned lrID = 0;
+    int lrID = 0;
     bool rIDunknown = true;
     bool breakWhile = false;
 
@@ -438,18 +427,18 @@ int main( int argc, char const ** argv )
 	if( gtIs[gtID][0] == '0' and gtIs[gtID][2] == '1' )
 	  heterozygote = true;
 	StringSet< CharString> PLset;
-	strSplit(PLset,gtIs[plID],EqualsChar<','>());
 	bool highPL = false;
 	if( !getIdByName( plID, formatIs, "PL" )){
 	  if( O.verbose ) cerr << "No PL found, setting as true " << cChrom << " " << record.beginPos+1 << endl;
 	  highPL = true;
+	}else{
+	  strSplit(PLset,gtIs[plID],EqualsChar<','>());
+	  try{  // The PL might be set as "-"
+	    if( atoi( toCString( PLset[0] ) ) >= O.minPL and atoi( toCString( PLset[2] ) ) >= O.minPL ){
+	      highPL = true;
+	    }
+	  }catch(std::exception const & ex){}
 	}
-	try{  // The PL might be set as "-"
-	  if( atoi( toCString( PLset[0] ) ) >= O.minPL and atoi( toCString( PLset[2] ) ) >= O.minPL ){
-	    highPL = true;
-	  }
-	}catch(std::exception const & ex){}
-
 	if( ( highPL and heterozygote and posUsed[cChrom].count( record.beginPos + 1 ) != 0) ){
 	  mI[cChrom][mUsed[cChrom]].pos = record.beginPos;
 	  mI[cChrom][mUsed[cChrom]].name = record.id;
